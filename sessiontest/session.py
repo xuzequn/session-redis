@@ -35,7 +35,9 @@ class Session(SessionData):
             current_session = session_manager.get(request_handler)
         except InvalidSessionException:
             current_session = session_manager.get()
-        for key, data in current_session.iteritems():
+
+        # for key, data in current_session.iteritems():
+        for key, data in current_session.items():
             self[key] = data
         self.session_id = current_session.session_id
         self.hmac_key = current_session.hmac_key
@@ -82,10 +84,15 @@ class SessionManager(object):
         if not session_id:
             session_exists = False
             session_id = self._generate_id()
-            hmac_key = self._generate_hmac(session_id)
+            hmac_key = self._generate_hmac(bytes(session_id.encode('utf-8')))
         else:
             session_exists = True
-        check_hmac = self._generate_hmac(session_id)
+
+        if isinstance(session_id, bytes):
+            check_hmac = self._generate_hmac(session_id)
+        else:
+            check_hmac = self._generate_hmac(bytes(session_id.encode('utf-8')))
+        
         if hmac_key != check_hmac:
             raise InvalidSessionException()
         session = SessionData(session_id, hmac_key)
@@ -102,11 +109,17 @@ class SessionManager(object):
         self.redis.setex(session.session_id, self.session_timeout, session_data)
 
     def _generate_id(self):
-        new_id = hashlib.sha256(self.secret + str(uuid.uuid4()))
+        hashstr = self.secret + str(uuid.uuid4())
+        
+        new_id = hashlib.sha256()
+        new_id.update(hashstr.encode("utf-8"))
         return new_id.hexdigest()
 
     def _generate_hmac(self, session_id):
-        return hmac.new(session_id, self.secret, hashlib.sha256).hexdigest()
+
+        # str 类型转换 bytes
+        secret = (bytes(self.secret, encoding = "utf8"))
+        return hmac.new(session_id, secret, hashlib.sha256).hexdigest()
 
 
 #此处可以自定义异常处理

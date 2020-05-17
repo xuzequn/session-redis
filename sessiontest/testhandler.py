@@ -10,6 +10,7 @@ class HelloHandler(BaseHandler):
         print (self.session)
         l.append(hello)
         l.append(world)
+        print(hello, world)
         l.append(self.session['first_session_value'])
         self.render('./templates/hello.html', page_object=l)
 

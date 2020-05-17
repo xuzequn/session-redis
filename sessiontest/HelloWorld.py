@@ -2,7 +2,6 @@
 
 import os
 import sys
-from session import *
 from tornado.ioloop import IOLoop
 import tornado
 import session
